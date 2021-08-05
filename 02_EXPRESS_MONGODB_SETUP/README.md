@@ -57,5 +57,78 @@ app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
 * `git commit -m 'Initial commit'`
 
 ## Connecting To MongoDB With Mongoose
+1. Copy Connection String from Mongo Atlas --> need password and database name
+* `mongodb+srv://rachel1789:<password>@devconnector.skfna.mongodb.net/myFirstDatabase?retryWrites=true&w=majority` 
+2. create `config` folder --> create file,  `default.json` --> create global values we can use throughout our application with help of npm package we installed
+```json
+{
+  "mongoURI": "mongodb+srv://rachel1789:<password>@devconnector.skfna.mongodb.net/test?retryWrites=true&w=majority"
+}
+```
+3. could add connection logic in `server.js` but instead we are going to create new file in `config` --> `db.js` to create our mongoDB, mongoose connections
+- require `mongoose` and `config`(want to grab the string we put in `default.json`)
+```js
+const mongoose = require('mongoose');
+const config = require('config');
+const db = config.get('mongoURI');
+
+const connectDB = async () => {
+  try {
+    await mongoose.connect(db);
+
+    console.log('MongoDB Connected');
+  } catch (err) {
+    console.error(err.message);
+    // Exit process with failure
+    process.exit(1);
+  }
+};
+
+module.exports = connectDB;
+```
+4. In `server.js` --> bring in connectDB
+```js
+const express = require('express');
+const connectDB = require('./config/db');
+
+const app = express();
+
+//Connect Database
+connectDB();
+```
+5. We get a deprecation warning, so we will need to pass this option in our `mongoose.connect`
+```js
+const connectDB = async () => {
+  try {
+    await mongoose.connect(db, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+```
 
 ## Route Files With Express Router
+* Create files that have routes that will pertain to our users
+1. `mkdir routes`
+2. `mkdir routes/api`
+3. `touch routes/api/users.js routes/api/auth.js routes/api/profile.js routes/api/posts.js`
+![file structure](assets/files.png)
+4. bring in express router to break it up --> example in `users.js`
+```js
+const express = require('express');
+const router = express.Router();
+
+// @route   GET api/users 
+// @desc    Test route
+// @access  Public
+router.get('/', (req, res) => res.send('User route'));
+
+module.exports = router;
+```
+5. in `server.js` make it so we can access routes --> app.use and then put in endpoint --> and want it to pertain to that users file (now api/users will pertain to the ('/') in file)
+```js
+// Define Routes
+app.use('/api/users', require('./routes/api/users'))
+```
+* Keep our endpoints Restful, meaning that if we make a get request to the `api/users`, it would get those users
+6. Create Collections in Postman for project to keep track and test our requests and endpoints
+![postman collections](assets/postman.png)
