@@ -1,6 +1,8 @@
 # Mern Stack Back to front TraversyMedia
 Code Along with Brad Traversy on Udemy [MERN Stack Front To Back: Full Stack React, Redux &amp; Node.js](https://www.udemy.com/course/mern-stack-front-to-back/learn/lecture/10054652#overview)
 
+[GitHub Repo](https://github.com/bradtraversy/devconnector_2.0)
+
 ## Modern Technologies Used
 * VSCode Editor
 * ES6+ Syntax
