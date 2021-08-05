@@ -11,7 +11,7 @@
 * ES7 React/Redux/GraphQL/React-Native.snippets
 * Prettier - Code Formatter --> Format on Save (search for in settings) --> search for prettier and can adjust settings
 * in `settings.json` make sure to include language to auto create tags in JSX
-```js
+```json
   "emmet.includeLanguages": {
     "ejs": "html",
     "javascript": "javascriptreact"
