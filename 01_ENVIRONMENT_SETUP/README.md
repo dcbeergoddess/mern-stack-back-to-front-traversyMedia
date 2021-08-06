@@ -19,3 +19,7 @@
 ```
 * Use Git Bash for Windows --> copy and put in `settings.json` --> Linux Based Terminal
 ![Git Bash Docs](assets/gitbash.png)
+
+## Git and GitHub
+* Right now commits are local
+* [DOCS ON LINKING TO GITHUB REPO LATER](https://docs.github.com/en/github/importing-your-projects-to-github/importing-source-code-to-github/adding-an-existing-project-to-github-using-the-command-line)
