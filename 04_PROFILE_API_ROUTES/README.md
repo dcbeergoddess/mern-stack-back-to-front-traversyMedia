@@ -270,9 +270,194 @@ router.get('/me', auth, async (req, res) => {
   ![test delete user](asstes/profile7.png)
 
 ## Add Profile Experience
+* We have create and update route, but that's just to update the main data, experience and education are basically like separate resources
+* We are going to make a put request which is used to update data
+* it's an array within a collection with a document (could make it a post request) but basically we are updated PART of a profile
+    - create put route for experience
+    - we are going to need some validation here because on the front end in react, we're going to have a form to add an experience and title, company and from data are all going to be required --> add brackets around middleware parameters 
+        ```js
+          router.put(
+          '/experience',
+          [
+            auth,
+            [
+              check('title', 'Title is required').not().isEmpty(),
+              check('company', 'Company is required').not().isEmpty(),
+              check('from', 'From date is required').not().isEmpty()
+            ]
+          ],
+          async (req, res) => {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+              return res.status(400).json({ errors: errors.array() });
+            }
+        ```
+* Now destructure and pull out some stuff from request body
+    - create a new object and save to new experience variable that will contain the data the user submits
+      ```js
+          // destructure from req.body
+          const { title, company, location, from, to, current, description } =
+            req.body;
+          // create new Experience object with the data that the user submits
+          const newExp = {
+            // title: title (below is shorthand of this)
+            title,
+            company,
+            location,
+            from,
+            to,
+            current,
+            description
+          };
+      ```
+* Now we want deal with MongoDB
+    - create variable called `profile` to fetch the profile we want to add experience to
+    - find by user (have `user` field that can match to `req.user.id` that we get from token `auth`)
+    - take `profile.experience` (which is an array) and we can push on to it
+    - we are going to use `unshift`, which is same as push, BUT pushed onto the BEGINNING OF ARRAY rather than the end so our most recent experience is our first, and pass in the `newExp`
+    - await profile save
+    - return entire profile, this will help us in the front end later on
+      ```js
+          // Fetch Profile to add the experience to
+          try {
+            const profile = await Profile.findOne({ user: req.user.id });
+
+            profile.experience.unshift(newExp);
+
+            await profile.save();
+
+            res.json(profile);
+          } catch (err) {
+            console.error(err.message);
+            res.status(500).send('Server Error');
+          }
+        }
+      ```
+    - TEST IN POSTMAN
+        - sending data so use content type header, login as rachel user and get token, and pass into HEADERS
+        - add data as raw json in BODY
+        - for date we can enter Month, day, year for now. In front in we'll use moment.js to make it look nice, not going to add a to date, but will set current to true since it's a current job/role
+        - Experience added as object in the array, and it also comes with it's own ID with is what's great about using a document database/NoSQL database
+    ![Add experience to user profile](assets/profile8.png)
+* We're not going to add functionality to update but can do that on own if we want
 
 ## Delete Profile Experience
+* add some more experiences to user profile using postman
+* in order to delete one, we're going to need to add that id in experience object to our request 
+* it would be possible to use a PUT request since we are updating, but since something is actually being removed, delete request is the preference
+    - get the profile by our user id
+    - then we need to get the correct experience to remove - GET REMOVE INDEX
+    - create removeIndex variable to map over experience array and pass in item and return just the id
+    - chain on indexOf and we want to get the one to match it to the `req.params.exp_id`, match whatever this is and get the experience
+    - take `profile.experience` and splice because we want to take something out and we already have the index available to use in removeIndex and take that one out
+    - await the new profile save
+    - send back response 
+      ```js
+        // @route   DELETE api/profile/experience/:exp_id
+        // @desc    Delete experience from profile
+        // @access  Private
+        router.delete('/experience/:exp_id', auth, async (req, res) => {
+          try {
+            const profile = await Profile.findOne({ user: req.user.id });
+            // Get remove index
+            const removeIndex = profile.experience
+              .map(item => item.id)
+              .indexOf(req.params.exp_id);
+            // removed item based on index that matched
+            profile.experience.splice(removeIndex, 1);
+            // await save
+            await profile.save();
+            // and send back response
+            res.json(profile);
+          } catch (err) {
+            console.error(err.message);
+            res.status(500).send('Server Error');
+          }
+        });
+      ```
+
+    - TEST IN POSTMAN --> grab ID of experience you want to delete and add to route, add your token to headers
+    ![test delete experience by id in postman](assets/profile9.png)
 
 ## Add & Delete Profile Education
+* Do same thing for Education that we did for experience, copy PUT and DELETE Route and change what is needed in education
+```js
+  // @route   PUT api/profile/education
+// @desc    Add profile education
+// @access  Private
+router.put(
+  '/education',
+  [
+    auth,
+    [
+      check('school', 'School is required').not().isEmpty(),
+      check('degree', 'Degree is required').not().isEmpty(),
+      check('fieldofstudy', 'Field of Study is required').not().isEmpty(),
+      check('from', 'From date is required').not().isEmpty()
+    ]
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    // destructure from req.body
+    const { school, degree, fieldofstudy, from, to, current, description } =
+      req.body;
+    // create new Experience object with the data that the user submits
+    const newEdu = {
+      // title: title (below is shorthand of this)
+      school,
+      degree,
+      fieldofstudy,
+      from,
+      to,
+      current,
+      description
+    };
+    // Fetch Profile to add the experience to
+    try {
+      const profile = await Profile.findOne({ user: req.user.id });
+
+      profile.education.unshift(newEdu);
+
+      await profile.save();
+
+      res.json(profile);
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Server Error');
+    }
+  }
+);
+
+// @route   DELETE api/profile/education/:edu_id
+// @desc    Delete education from profile
+// @access  Private
+router.delete('/education/:edu_id', auth, async (req, res) => {
+  try {
+    const profile = await Profile.findOne({ user: req.user.id });
+    // Get remove index
+    const removeIndex = profile.education
+      .map(item => item.id)
+      .indexOf(req.params.edu_id);
+    // removed item based on index that matched
+    profile.education.splice(removeIndex, 1);
+    // await save
+    await profile.save();
+    // and send back response
+    res.json(profile);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+```
+- TEST IN POSTMAN
+![add education](assets/education.png)
+- grab id of dummy education and delete
+![delete education](assets/education1.png)
 
 ## Get Github Repos For Profile
+* last version brad put the github logic on the client side which is bad practice since you have your API KEY on the front end which people can find and use it if they want
+* make request from our backend rather than react and only return the repositories
