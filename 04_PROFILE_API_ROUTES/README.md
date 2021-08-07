@@ -163,9 +163,111 @@ router.get('/me', auth, async (req, res) => {
 - experience and education will initialize as empty arrays, we will have endpoints to create those later 
 
 ## Get All Profiles & Profile By User ID
+* create more routes to get all profiles and get a profile by the user id
+* Fix Deprecation Warning of findAndModify in `db.js` --> set useFindAndModify to false
+* Create Route to get All Profiles
+    - use find message, but we also want to populate the name and avatar as an array of fields from the user collection
+    - then res.json those profiles along
+    ```js
+    // @route   GET api/profile/
+    // @desc    Get all profiles
+    // @access  Public
+    router.get('/', async (req, res) => {
+      try {
+        const profiles = await Profile.find().populate('user', ['name', 'avatar']);
+        res.json(profiles);
+      } catch (err) {
+        console.error(error.msg);
+        res.status(500).res.send('Server Error');
+      }
+    });
+    ```
+    - TEST IN POSTMAN --> gives back array of objects (only one right now) --> adds user with name and avatar
+    ![get profiles with name and avatar](assets/profile5.png)
+    - Create Profile for John Doe and send get request again to get all profiles, now we have two objects in our array with both users profiles
+* GET PROFILES by USER ID
+    - GET api/profile/user/:user_id
+    - as far as the query, take 's' off profiles because we are getting just one
+    - instead of find, we use fineOne and we want to find it by the user, and the id is going to come from URL and we can access with `req.params.user_id`
+    - check if there is a profile for user, if not we return 400 error code and send some JSON with a message
+    - otherwise go ahead and send the profile
+        ```js
+        // @route   GET api/profile/user/:user_id
+        // @desc    Get profile by user ID
+        // @access  Public
+        router.get('/user/:user_id', async (req, res) => {
+          try {
+            const profile = await Profile.find({ user: req.params.user_id }).populate(
+              'user',
+              ['name', 'avatar']
+            );
 
+            if (!profile)
+              return res.status(400).json({ msg: 'There is no profile for this user' });
+            res.json(profile);
+          } catch (err) {
+            console.error(error.msg);
+            res.status(500).res.send('Server Error');
+          }
+        });
+        ```
+      - TEST IN POSTMAN --> grab a user Object ID to test
+      ![Get profile by user id](profile6.png)
+      - we do have one issue that if you pass in an invalid Object ID it will return a server error instead of 'there is no profile for this user'
+      - we can throw error for specific error messages based on ObjectId
+        ```js
+        // @route   GET api/profile/user/:user_id
+        // @desc    Get profile by user ID
+        // @access  Public
+        router.get('/user/:user_id', async (req, res) => {
+          try {
+            const profile = await Profile.find({ user: req.params.user_id }).populate(
+              'user',
+              ['name', 'avatar']
+            );
+
+            if (!profile) return res.status(400).json({ msg: 'Profile not found' });
+            res.json(profile);
+          } catch (err) {
+            console.error(err.msg);
+            if (err.kind === 'ObjectId') {
+              return res.status(400).json({ msg: 'Profile not found' });
+            }
+            res.status(500).res.send('Server Error');
+          }
+        });
+        ```
 
 ## Delete Profile & User
+* Delete not just a profile but a user completely including posts
+    - we are not getting anythings so we don't need to save it to a variable
+    - use method `findOneAndRemove`
+    - pass in user which is the objectId and match that to req.user.id --> private which means we have access to the token and we need to add `auth` as parameter
+    - we want to come back a remove posts later
+    - for user, we're dealing with user model and now instead of user since that's not a field in the user model, we want to use underscore id 
+    - send message that user was removed or deleted
+      ```js
+      // @route   DELETE api/profile/
+      // @desc    Delete profile, user & posts
+      // @access  Private
+      router.delete('/', auth, async (req, res) => {
+        try {
+          // @todo - remove users posts
+
+          // Remove profile
+          await Profile.findOneAndRemove({ user: req.user.id });
+          // Remove User
+          await User.findOneAndRemove({ _id: req.user.id });
+
+          res.json({ msg: 'User deleted' });
+        } catch (err) {
+          console.error(err.msg);
+          res.status(500).res.send('Server Error');
+        }
+      });
+      ```
+  * Create new user with profile in POSTMAN and test DELETE, User removed from MongoDB Collections
+  ![test delete user](asstes/profile7.png)
 
 ## Add Profile Experience
 
