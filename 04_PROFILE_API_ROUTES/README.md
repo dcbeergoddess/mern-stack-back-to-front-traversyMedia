@@ -461,3 +461,44 @@ router.delete('/education/:edu_id', auth, async (req, res) => {
 ## Get Github Repos For Profile
 * last version brad put the github logic on the client side which is bad practice since you have your API KEY on the front end which people can find and use it if they want
 * make request from our backend rather than react and only return the repositories
+* go to [Git Hub Developer Settings](https://github.com/settings/developers) to OAuth the application and use localhost as your URL, otherwise you can only make like 50 requests per hour
+* Grab Client ID and Secret that is generated and we are going to add them it too default.json in our config
+* GO BACK TO Profile Route file & Create new route
+    - to /github/:username to get user repos from GitHub, will be public because viewing a profile is public
+    - want to be able to show the repositories there
+    - construct options object that has a URI and plug this into `request` which is the npm package we installed so we need to bring that into the file along with our config for the client id and secret
+    - URI --> github api docs (add in parameters on repos, amount per page, sorted by created date ascending, and add client id and secret)
+    - specify method of get
+    - add to headers to avoid issues brad was having (user-agent)
+        ```js
+        // @route   GET api/profile/github/:username
+        // @desc    Get user repos from GitHub
+        // @access  Public
+        router.get('/github/:username', (req, res) => {
+          try {
+            const options = {
+              uri: `https://api.github.com/users/${req.params.username}/repos?per_page=5&sort=created:asc&client_id=${config.get('githubClientId')}&client_secret=${config.get('githubSecret')}`,
+              method: 'GET',
+              headers: { 'user-agent': 'node.js'}
+            }
+        ```
+    - then we do request that takes in our options and then a callback which will give us a possible error, a response object and body
+    - add arrow function and go ahead and check for error, if there is then console that error
+    - we want to check if is a 200, if it's not then we send back a 404 error and just say the profile isn't found and send response with JSON and send back the `body` (The `body` is basically going ot be a regular `string` with escaped quotes so we want to `JSON.parse` and have our data sent back as like that)
+    - need to remember to return res.status(404)... since it's not the last response being sent back, otherwise error in terminal
+        ```js
+          request(options, (error, response, body) => {
+            if (error) console.error(error);
+
+            if (response.statusCode !== 200) {
+              return res.status(404).json({ msg: 'No GitHub profile found' });
+            }
+
+            res.json(JSON.parse(body));
+          });
+        ```
+    - TEST IN POSTMAN --> we get back latest 5 created repos in our username ascending
+    ![github api test](assets/githubAPI.png)
+    -
+
+
