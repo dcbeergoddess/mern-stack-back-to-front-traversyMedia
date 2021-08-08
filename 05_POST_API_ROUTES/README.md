@@ -201,5 +201,76 @@ router.get('/:id', auth, async (req, res) => {
 ![delete post route test](assets/post4.png)
 
 ## Post Like & Unlike Routes
+* We have an array inside of our post model for likes
+*  PUT Request because UPDATE post is basically what is happening
+    - `PUT api/posts/like/:id` --> need to know id of post being liked
+    - Need to check if post has already be liked by this user --> different ways you can do this
+        - use filter --> high order array method --> takes in a function and the parameter is going to be like --> compare the current iteration (i.e. the current user to the user that's logged in) --> turn this into a string so it will actually match the user ID thats in the req.user.id --> then we want to check the length of that --> will only return something if user matches and if that length is greater than zero (which means that it's already been liked) which means there is a like in there that has this user
+        - if true then send 400 --> bad request
+        - if user hasn't already liked it, then we want ot add on to it so we want to add on to the array, could do a push but we are going to do an unshift which just puts it on the beginning, then we want to add the user adn it's going to be the user that's logged in
+        - save to database --> respond with `post.likes` because when we get to React in Redux this will matter on the front end
+            ```js
+            // @route   PUT api/posts/like/:id
+            // @desc    Like a post
+            // @access  Private
+            router.put('/like/:id', auth, async (req, res) => {
+              try {
+                const post = await Post.findById(req.params.id);
+                // Check if the post has already been liked
+                if (post.likes.filter(like => like.user.toString() === req.user.id).length > 0) {
+                  return res.status(400).json({ msg: 'Post already liked' });
+                }
+                post.likes.unshift({ user: req.user.id });
+                await post.save();
+                res.json(post.likes);
+              } catch (err) {
+                console.error(err.message);
+                res.status(500).send('Server Error');
+              }
+            });
+            ```
+        - TEST IN POSTMAN --> with logged in user token --> Get like back that is the id of the like and the actually user that liked it
+        ![like post test](assets/like.png)
+        - Try to send again and we get our error msg back
+        ![like post error msg](assets/like1.png)
+        - look in posts --> now post has a like with an id and a user
+        ![likes in post](assets/like2.png)
+* Create route to unlike (not a dislike but a way to remove your like)
+    - PUT request to `/unlike/:id`
+    - see if the pst has been liked first (can't unlike a post we haven't liked yet) --> similar to like except instead of check if it's greater than zero we want to check if it's equal to zero (that means we have not liked the post yet)
+    - instead of adding a like, we need to remove it based on the removeIndex (similar to experience and education with splice, toString to match ID's)
+        ```js
+        // @route   PUT api/posts/unlike/:id
+        // @desc    Unlike a post
+        // @access  Private
+        router.put('/unlike/:id', auth, async (req, res) => {
+          try {
+            const post = await Post.findById(req.params.id);
+            // Check if the post has already been liked
+            if (
+              post.likes.filter(like => like.user.toString() === req.user.id).length ===
+              0
+            ) {
+              return res.status(400).json({ msg: 'Post has not yet been liked' });
+            }
+
+            //Get remove index
+            const removeIndex = post.likes
+              .map(like => like.user.toString())
+              .indexOf(req.user.id);
+
+            post.like.spice(removeIndex, 1);
+
+            await post.save();
+
+            res.json(post.likes);
+          } catch (err) {
+            console.error(err.message);
+            res.status(500).send('Server Error');
+          }
+        });
+        ```
+      - Test in POSTMAN --> remove like and returns empty array
+      ![unlike test in Postman](assets/)
 
 ## Add & Remove Comment Routes
