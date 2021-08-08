@@ -124,5 +124,118 @@ const App = () => (
     - change a tags and `href` to `to` and change paths to reflect our routes
 
 ## Register Form & useState Hook
+* grab html from Brads assets for 
+* with forms we need to have some components state because each input needs to have it's own state, and onChange handler
+    - bring in `useState` hook
+    ```js
+      import { useState } from 'react';
+
+      const Register = () => {
+        const [formData, setFormData] = useState({
+          //default object and values/initial state
+          name: '',
+          email: '',
+          password: '',
+          password2: ''
+        });
+    ```
+    - similar to if you were using a class instead
+    ```js
+      state = {
+        formData: {
+          //HERE SOULD BE DATA
+        }
+      }
+      //SET STATE
+      this.setState()//pass in new values
+    ```
+    - Destructure form data to save syntax time
+    ```js
+        //DESTRUCTURE DATA -- instead of having to name.formData, etc.
+        const { name, email, password, password2 } = formData;
+    ```
+    - can now add value to input with destructured syntax w/ JSX, and use onChange to reflect name attribute of input
+    ```js
+        //DESTRUCTURE DATA -- instead of having to name.formData, etc.
+        const { name, email, password, password2 } = formData;
+        //use onChange with everything by using `e.target.name` refers to 'name' attribute in input
+        const onChange = e =>
+          setFormData({ ...formData, [e.target.name]: e.target.value });
+        return (
+          <>
+            <h1 className='large text-primary'>Sign Up</h1>
+            <p className='lead'>
+              <i className='fas fa-user'></i> Create Your Account
+            </p>
+            <form className='form' action='create-profile.html'>
+              <div className='form-group'>
+                <input
+                  type='text'
+                  placeholder='Name'
+                  name='name'
+                  value={name}
+                  onChange={e => onChange(e)}
+                  required
+                />
+              </div>
+    ```
+    * change for all inputs
+    * create onSubmit function for form onSubmit --> state hook great because we have access to it from anywhere, now we are just going to console.log to test
+    ```js
+      const onSubmit = e => {
+        e.preventDefault();
+        if (password !== password2) {
+          console.log('Passwords do not match');
+        } else {
+          console.log(formData);
+        }
+      };
+
+      return (
+        <>
+          <h1 className='large text-primary'>Sign Up</h1>
+          <p className='lead'>
+            <i className='fas fa-user'></i> Create Your Account
+          </p>
+          <form className='form' onSubmit={e => onSubmit(e)}>
+            <div className='form-group'>
+    ```
+- TEST IN FORM 
+![Console.log Form Data](assets/form.png)
+- we're going to want to register our user through a redux action but we have not implemented Redux yet
 
 ## Request Example & Login Form
+- Test with Axios first --> import in register file
+- make onSubmit async and add headers, and post to the route in our back end
+```js
+  const onSubmit = async e => {
+    e.preventDefault();
+    if (password !== password2) {
+      console.log('Passwords do not match');
+    } else {
+      const newUser = {
+        name,
+        email,
+        password
+      }
+      try {
+        const config = {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+        //now we have a body to send  
+        const body = JSON.stringify(newUser)
+
+        const res = await axios.post('/api/users', body, config);
+        console.log(res.data); //should be the token
+      } catch (err) {
+        console.error(err.response.data)
+      }
+    }
+  };
+```
+- Test adding a new user and we should see it pop up in our MongoDB --> we will not keep this code, we will do this with redux action
+![axios test of new user](assets/axios.png)
+
+* LOGIN FORM --> same as register with less fields, also need to change Links in forms
