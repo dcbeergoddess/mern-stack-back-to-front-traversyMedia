@@ -271,6 +271,127 @@ router.get('/:id', auth, async (req, res) => {
         });
         ```
       - Test in POSTMAN --> remove like and returns empty array
-      ![unlike test in Postman](assets/)
+      ![unlike test in Postman](assets/unlike.png)
 
 ## Add & Remove Comment Routes
+* Create route to add a comment to a post
+    - Similar to adding a Post
+    - `/api/posts/comment/:id` (need id of post)
+    - Private, auth, check text (comments identical to posts but they don't have likes --> can add if want, basically same as before and would just be redundant for this tutorial)
+    - need to bring in post as well as user and we can get the id from the URL (i.e. the PARAMS)
+    - not a collection database so we just need to make newComment set to an object
+    - add this new comment onto the post comments which we can access with post.comments (use unshift to add to beginning), pass in new comment and then we can save the post
+    - don't need to put post in variable we just need to call it in this case
+    - send back all the comments
+        ```js
+        // @route   POST api/posts/comment/:id
+        // @desc    Create a post
+        // @access  Private
+        router.post(
+          '/comment/:id',
+          [auth, [check('text', 'Text is required').not().isEmpty()]],
+          async (req, res) => {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+              return res.status(400).json({ errors: errors.array() });
+            }
+            try {
+              const user = await User.findById(req.user.id).select('-password');
+              const post = await Post.findById(req.params.id);
+
+              const newComment = {
+                text: req.body.text,
+                name: user.name,
+                avatar: user.avatar,
+                user: req.user.id
+              };
+              //Add Comment onto Post Comments
+              post.comments.unshift(newComment);
+
+              await post.save();
+
+              res.json(post.comments);
+            } catch (err) {
+              console.log(err.message);
+              res.status(500).send('Server Error');
+            }
+          }
+        );
+        ```
+    - Test in Postman --> with content type and user token with post ID
+    ![post comment test](assets/comment.png)
+    - check in Get all Posts and see it was added to the Post object
+    ![comment in post](assets/comment1.png)
+* Create Delete Post Route
+    - similar to delete post
+    - `api/posts/comment/:id/:comment_id` --> find the post by the id and then need to know which comment to delete
+    - We want to get the post by it's id
+    - pull out comment from the post --> use find method (find it by it's id, takes in function like forEach, map etc.) --> for each comment --> test where the comment.id is equal to the req.params.comment --> will give us the comment if it exists or return false, we want ot make sure our comment exists, fo if no comment than return a 404-not found status
+    - then we want to make sure that the user that is deleting the comment is the user that actually made the comment
+    - if comment.user (comment has user property) is equal to the user that is logged in (whish is an objectID so we want to turn it into a String) --> return error if not equal to req.user.id (401-unauthorized)
+    - If all is ok then we want to find the index and delete where the index matches the removeIndex
+        - **BRAD'S REMOVE INDEX LOGIC IS WRONG, IT JUST DELETES THE FIRST INSTANCE OF A COMMENT THAT MATCHES THE USER**
+        - **USE THIS CODE INSTEAD SINCE WE ALREADY HAVE THE COMMENT WITH `req.params.comment_id`**
+        ```js
+          const removeIndex = post.comments
+          .map(comment => comment.id.toString())
+          .indexOf(req.params.comment_id);
+        ```
+        - **ALSO BEFORE SPLICE WANT TO CHECK THAT USER STILL BELONGS TO THE COMMENT IN THE INDEX**
+        ```js
+            // Check if it is from the user
+            if (post.comments[removeIndex].user.toString() !== req.user.id) {
+              return res.status(401).json({
+                error: "Unauthorized. Can't delete a post from a different user"
+              });
+            }
+        ```
+    - FULL ROUTE
+        ```js
+          // @route   DELETE api/posts/comment/:id/:comment_id
+        // @desc    Delete a comment
+        // @access  Private
+        router.delete('/comment/:id/:comment_id', auth, async (req, res) => {
+          try {
+            const post = await Post.findById(req.params.id);
+            // Pull out comment
+            const comment = post.comments.find(
+              comment => comment.id === req.params.comment_id
+            );
+            // Make sure comment exists
+            if (!comment) {
+              return res.status(404).json({ msg: 'Comment does not exist' });
+            }
+            // Check user
+            if (comment.user.toString() !== req.user.id) {
+              return res.status(401).json({ msg: 'User not authorized' });
+            }
+
+            //Get remove index
+            const removeIndex = post.comments
+              .map(comment => comment.id.toString())
+              .indexOf(req.params.comment_id);
+
+            // Check if it is from the user
+            if (post.comments[removeIndex].user.toString() !== req.user.id) {
+              return res.status(401).json({
+                error: "Unauthorized. Can't delete a post from a different user"
+              });
+            }
+
+            post.comments.splice(removeIndex, 1);
+
+            await post.save();
+
+            res.json(post.comments);
+          } catch (err) {
+            console.log(err.message);
+            res.status(500).send('Server Error');
+          }
+        });
+        ```
+    - TEST IN POSTMAN
+    ![delete comment by user test](assets/comment2.png)
+* not going to create an update route for now. Can add on ourselves or come back to later after all is said and done
+* ALL THE ROUTES IN POSTMAN FOR OUR BACKEND
+![FULL BACK END ROUTES IN POSTMAN](assets/postman.png)
