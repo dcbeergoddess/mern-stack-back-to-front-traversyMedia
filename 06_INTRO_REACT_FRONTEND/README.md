@@ -104,6 +104,24 @@ export default App;
 ```
 
 ## React Router Setup
+* `import { BrowserRouter as Router, Route, Switch } from 'react-router-dom'`
+* In order for it to work you have to wrap everything in `Router` and change embedded Landing component
+```js
+const App = () => (
+  <Router>
+    <>
+      <Navbar />
+      <Route exact path='/' component={Landing} />
+    </>
+  </Router>
+);
+```
+* Create Auth Folder for login and register components
+* class container pushes everything to the middle with the theme
+* add in Switch so we don't have issues, especially when we create our private component
+* change `<a>` tags to `Link` for React
+    - `import { Link } from 'react-router-dom'`
+    - change a tags and `href` to `to` and change paths to reflect our routes
 
 ## Register Form & useState Hook
 
