@@ -54,11 +54,54 @@
         },
         "proxy": "http://localhost:5000"
     ```
-* RUN SERVER AGAIN
-
-
+* RUN SERVER AGAIN --> `npm run dev`
 
 ## Clean Up & Initial Components
+* in `src` folder on client side get ride of
+    - serverWorker.js
+    - logo.svg
+    - index.css
+    - App.test.js
+* Get ride of references in index.js to those files and the code related to it, Now we are just rendering our main app in the index.js file
+* in `App.js` --> git rid of logo and then make function into arrow function --> don't need to import React anymore and `<Fragment>` can just be `<>`
+```js
+import './App.css';
+
+const App = () => (
+  <>
+    <h1>App</h1>
+  </>
+);
+
+export default App;
+```
+* Delete code in `App.js` and import from theme, `style.css` and change path of showcase image on the Landing Page and bring image in
+* Bring in Font Awesome to index.html (react-icons should allow us to use them without this, will recode later on)
+* Clean up and remove comments from index.html in public folder
+
+### CREATE SOME COMPONENTS
+* **NAVBAR** and **LANDING**
+    - create `components` folder in `src`
+    - create another folder called `layout` in `components` 
+    - create `Navbar.js` and `Landing.js` files in layout
+    - in `Navbar.js` --> use snippets extension to create arrow function component w/ export
+    - for now we are going to add static HTML output, later we'll have some state we pull from Redux and we decide what links we're going to show, now static HTML or JSX
+    - grab nav tag from index.html in brads assets and landing section and paste into components, need to change all `class` attributes to `className` for react
+* Import both into `App.js`
+```js
+import './App.css';
+import Navbar from './components/layout/Navbar';
+import Landing from './components/layout/Landing';
+
+const App = () => (
+  <>
+    <Navbar />
+    <Landing />
+  </>
+);
+
+export default App;
+```
 
 ## React Router Setup
 
