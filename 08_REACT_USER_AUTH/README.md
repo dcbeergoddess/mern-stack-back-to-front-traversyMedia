@@ -280,4 +280,140 @@
 
 ## User Login
 
+- At This point we can register a user which gives us a token and we created loadUser action which will take that token and basically send a request to teh API auth route and then we get the user back
+- Now we need a way to actually log in without having to register another user
+  - log user out --> clear out token from chrome dev tools in local storage under application and delete it (we don't have logout functionality yet)
+
+* USER LOGIN
+
+  - similar to REGISTER USER --> in `actions/auth.js`
+    - don't need the name, just email and password so don't need to pass it in as an object in the parameters
+    - request is being sent to `/api/auth` since we are logging in/authenticating
+    - if success we'll have a LOGIN_SUCCESS action type and send the data as a payload
+    - if something goes wrong, we want to do the same thing where we're sending an alert if we get errors --> have to have some body validation for the login as well --> then dispatch LOGIN_FAIL if something goes wrong
+  - Create `types` for LOGIN_SUCCESS and LOGIN_FAIL --> Bring into `actions`
+
+            ```js
+            // LOGIN USER
+            export const login = (email, password) => async dispatch => {
+              const config = {
+                headers: {
+                  'Content-Type': 'application/json'
+                }
+              };
+              //prepare data to send
+              const body = JSON.stringify({ email, password });
+
+              try {
+                const res = await axios.post('/api/auth', body, config);
+
+                dispatch({
+                  type: LOGIN_SUCCESS,
+                  payload: res.data
+                });
+              } catch (err) {
+                const errors = err.response.data.errors;
+
+                if (errors) {
+                  errors.forEach(error => dispatch(setAlert(error.msg, 'danger')));
+                }
+                dispatch({
+                  type: LOGIN_FAIL
+                });
+              }
+            };
+            ```
+
+    - in `reducer` need to handle what happens when either of these fire off
+      - `LOGIN_SUCCESS` does the same thing `REGISTER_SUCCESS`
+      - `LOGIN_FAIL` is same as `REGISTER_FAIL` and `AUTH_ERROR`
+    - NOW WE NEED A WAY TO FIRE OFF THE ACTION
+
+      - COMES FROM COMPONENTS -- `Login.js`
+      - use `connect` from `react-redux`
+      - bring in `PropTypes` and `login` from the actions
+      - export connect with map to state as null for now and actions login, login is a prop so add in propTypes
+      - we don't need to separate the onSubmit out you can just do it in JSX but keep it same as register for now
+
+        ```js
+        import { useState } from 'react';
+        import { Link } from 'react-router-dom';
+        import { connect } from 'react-redux';
+        import PropTypes from 'prop-types';
+        import { login } from '../../actions/auth';
+
+        const Login = ({ login }) => {
+          const [formData, setFormData] = useState({
+            //initial state
+            email: '',
+            password: ''
+          });
+        ```
+
+        ```js
+        Login.propTypes = {
+          login: PropTypes.func.isRequired
+        };
+
+        export default connect(null, { login })(Login);
+        ```
+
+        ```js
+        //DESTRUCTURE DATA -- instead of having to name.formData, etc.
+        const { email, password } = formData;
+        //use onChange with everything by using `e.target.name` refers to 'name' attribute in input
+        const onChange = e =>
+          setFormData({ ...formData, [e.target.name]: e.target.value });
+
+        const onSubmit = e => {
+          e.preventDefault();
+          login(email, password);
+        };
+        ```
+
+* ALSO need to dispatch the loadUser in both login and register in `actions/auth.js`
+
+```js
+  try {
+    const res = await axios.post('/api/auth', body, config);
+
+    dispatch({
+      type: LOGIN_SUCCESS,
+      payload: res.data
+    });
+
+    dispatch(loadUser());
+```
+
+- NOW LOGIN WITH A USER AND WE see the state changes with the user token and payload data ![Login user working](assets/login.png)
+- WE want to bring our auth state into `Login.js` component and redirect the user when they login
+
+  - create `mapStateToProps ` to get the auth state --> all we need to `isAuthenticated`
+  - add to prop types as boolean
+
+    ```js
+    Login.propTypes = {
+      login: PropTypes.func.isRequired,
+      inAuthenticated: PropTypes.bool
+    };
+
+    const mapStateToProps = state => ({
+      isAuthenticated: state.auth.isAuthenticated
+    });
+
+    export default connect(mapStateToProps, { login })(Login);
+    ```
+
+  - go above return and redirect if logged in
+  - with `react-router-dom` we can do a `<Redirect to="#">` (bring in where you brought in LINK )
+  - will crate dashboard later on
+    ```js
+    // Redirect if logged in
+    if (isAuthenticated) {
+      return <Redirect to='/dashboard' />;
+    }
+    ```
+  - Do the same for register
+  - Login in with react app, when logged in if you go to `register` or `login` it takes you to `/dashboard` instead
+
 ## Logout & Navbar Links
