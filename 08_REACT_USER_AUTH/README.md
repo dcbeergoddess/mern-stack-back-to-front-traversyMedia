@@ -417,3 +417,91 @@
   - Login in with react app, when logged in if you go to `register` or `login` it takes you to `/dashboard` instead
 
 ## Logout & Navbar Links
+
+- Create Logout Action that will clear everything
+- Change NavBar based on whether or not a user is logged in
+
+1. Create `LOGOUT` type
+2. Bring into `actions/auth.js` and write logic
+
+```js
+// LOGOUT / CLEAR PROFILE
+export const logout = () => dispatch => {
+  dispatch({ type: LOGOUT });
+};
+```
+
+3. in `reducers/auth.js` --> bring in type, and same as `REGISTER_FAIL... etc`
+4. now in `Navbar.js`, which right now is a dumb component and it just displays some markup
+
+   - Bring in connect--> auth state, PropTypes, logout
+   - mapStateToProps --> we want our auth state
+   - PropTypes --> bring in logout actions, and the auth state whish is an object
+   - add props to the parameters, for auth we are going to pull out isAuthenticated and loading because we want to make sure that the user is done loading before we put the link in
+
+     ```js
+     Navbar.propTypes = {
+       logout: PropTypes.func.isRequired,
+       auth: PropTypes.object.isRequired
+     };
+
+     const mapStateToProps = state => ({
+       auth: state.auth
+     });
+
+     export default connect(mapStateToProps, { logout })(Navbar);
+     ```
+
+     ```js
+     import { Link } from 'react-router-dom';
+     import { connect } from 'react-redux';
+     import PropTypes from 'prop-types';
+     import { logout } from '../../actions/auth';
+
+     const Navbar = ({ auth: { isAuthenticated, loading }, logout }) => {
+     ```
+
+   - Create a couple variables for guest links and auth links
+   - put in html, for logout we are using font awesome icon that when on small screen will hide the text and only have an icon (have special class from the css resources brad made)
+   - In the nav bar itself, a few things you can do --> we can us the double ampersand, so basically we are saying that if not loading then do this...
+
+     - what we want to do here is just show a frament adn inside the fragment we are going to put a ternary to check to see if we're authenticated and if we are logged in we show the auth links, otherwise show guestlinks
+
+       ```js
+       const Navbar = ({ auth: { isAuthenticated, loading }, logout }) => {
+         const authLinks = (
+           <ul>
+             <li>
+               <Link onClick={logout} to='#!'>
+                 <i className='fas fa-sign-out-alt'></i> <span className='hide-sm'>Logout</span>
+               </Link>
+             </li>
+           </ul>
+         );
+
+         const guestLinks = (
+           <ul>
+             <li>
+               <Link to='#!'>Developers</Link>
+             </li>
+             <li>
+               <Link to='/register'>Register</Link>
+             </li>
+             <li>
+               <Link to='/login'>Login</Link>
+             </li>
+           </ul>
+         );
+
+         return (
+           <nav className='navbar bg-dark'>
+             <h1>
+               <Link to='/'>
+                 <i className='fas fa-code'></i> DevConnector
+               </Link>
+             </h1>
+             {!loading && <>{isAuthenticated ? authLinks : guestLinks}</>}
+           </nav>
+         );
+       };
+       ```
