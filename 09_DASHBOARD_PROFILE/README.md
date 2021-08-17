@@ -540,6 +540,147 @@ setFormData(profileData);
 
 ## Add Education & Experiences
 
+1. create actions for updating profile in types
+2. create logic for for add experience in profile actions
+
+```js
+// ADD Experience
+export const addExperience = (formData, history) => async dispatch => {
+  try {
+    const config = {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    };
+
+    const res = await axios.put('/api/profile/Experience', formData, config);
+
+    dispatch({
+      type: UPDATE_PROFILE,
+      payload: res.data
+    });
+
+    dispatch(setAlert('Experience Added', 'success'));
+
+    history.push('/dashboard');
+  } catch (err) {
+    const errors = err.response.data.errors;
+
+    if (errors) {
+      errors.forEach(error => dispatch(setAlert(error.msg, 'danger')));
+    }
+    dispatch({
+      type: PROFILE_ERROR,
+      payload: { msg: err.response.statusText, status: err.response.status }
+    });
+  }
+};
+
+// ADD EDUCATION
+export const addEducation = (formData, history) => async dispatch => {
+  try {
+    const config = {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    };
+
+    const res = await axios.put('/api/profile/education', formData, config);
+
+    dispatch({
+      type: UPDATE_PROFILE,
+      payload: res.data
+    });
+
+    dispatch(setAlert('Education Added', 'success'));
+
+    history.push('/dashboard');
+  } catch (err) {
+    const errors = err.response.data.errors;
+
+    if (errors) {
+      errors.forEach(error => dispatch(setAlert(error.msg, 'danger')));
+    }
+    dispatch({
+      type: PROFILE_ERROR,
+      payload: { msg: err.response.statusText, status: err.response.status }
+    });
+  }
+};
+```
+
+3. add to profile reducers (same as GET_PROFILE)
+4. create components for `AddEducation` and `AddExperience` in `profile-forms`
+
+   - for Experience, add logic to toggle `to` value to be disabled if the current job checkbox is checked
+   - set state first and then add logic into JSX with expressions for the attributes
+
+```js
+  // ANOTHER PIECE OF STATE TO SET TO DISABLED IF CURRENT = TRUE
+  const [toDateDisabled, toggleDisabled] = useState(false);
+
+  //IN JSX
+          <div className='form-group'>
+        <p>
+          <input
+            type='checkbox'
+            name='current'
+            checked={current}
+            value={current}
+            onChange={e => {
+              setFormData({ ...formData, current: !current });
+              toggleDisabled(!toDateDisabled);
+            }}
+          />{' '}
+          Current Job
+        </p>
+      </div>
+      <div className='form-group'>
+        <h4>To Date</h4>
+        <input
+          type='date'
+          name='to'
+          value={to}
+          onChange={e => onChange(e)}
+          disabled={toDateDisabled ? 'disabled' : ''}
+        />
+      </div>
+```
+
+#### ABOVE CODE IS UNNECESSARY
+
+- DO NOT NEED TO CREATE NEW STATE TO TOGGLE DISABLED ON AND OFF --> just make disabled false if current is false, if current is true than input will be disabled
+
+```js
+        <div className='form-group'>
+          <p>
+            <input
+              type='checkbox'
+              name='current'
+              checked={current}
+              value={current}
+              onChange={e => {
+                setFormData({ ...formData, current: !current });
+              }}
+            />{' '}
+            Current Job
+          </p>
+        </div>
+        <div className='form-group'>
+          <h4>To Date</h4>
+          <input
+            type='date'
+            name='to'
+            value={to}
+            onChange={onChange}
+            disabled={current}
+          />
+```
+
+5. Add route in `App.js`
+
+- Once Experience is Submitting properly to the data base with form attribute you can do the same for Education
+
 ## List Education & Experiences
 
 ## Delete Education, Experiences & Account
