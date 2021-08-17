@@ -457,6 +457,87 @@ useEffect(() => {
 }, [loading, getCurrentProfile, profile]);
 ```
 
+#### FROM QUESTIONS ABOUT LECTURE
+
+- useEffect has a lot of missing dependencies there.
+- Every property of profile would need to be added to the dependency array.
+- profile.company, profile.website, profile.location... etc.. all need to be in the array.
+- Which aside from looking even more verbose than it is here would cause issues.
+- The function passed to useEffect runs after every render if any of the dependencies have changed since the last render.
+- So in the old code if we included the dependencies, every time one of those changes like profile.company then useEffect runs and calls getCurrentProfile(), which then updates redux state, triggers a re render of the component and useEffect sees that profile.company has changed so it runs again, triggering another render, triggering useEffect again, calling getCurrentProfile() again..... Until React freaks out😬🤮.
+
+-So the first part to the solution is to only call getCurrentProfile() if we need to...
+
+```js
+if (!profile) getCurrentProfile();
+```
+
+- To fix the dependency issues instead of populating the local state from redux we can declare an initialState object outside of the component..
+
+```js
+const initialState = {
+  company: '',
+  website: '',
+  location: '',
+  status: '',
+  skills: '',
+  githubusername: '',
+  bio: '',
+  twitter: '',
+  facebook: '',
+  linkedin: '',
+  youtube: '',
+  instagram: ''
+};
+```
+
+- This doesn't need to be included as a dependency as being declared outside of the component guarantees that it never changes.
+- Then instead of imperatively checking for every field if we are loading or there is a value in the profile, we just check once..
+
+```js
+if (!loading && profile) {
+  // populate local state here if we are not loading
+}
+```
+
+- We can then clone the initialState at function level so we don't mutate the original (rules of functional programming)..
+
+```js
+const profileData = { ...initialState };
+```
+
+- Then we can loop through our profile from redux and check for the existence of a matching property in the profileData object, if there is a matching property in the profileData then it should be a field we have in local state and we can set that property in our profileData...
+
+```js
+for (const key in profile) {
+  if (key in profileData) profileData[key] = profile[key];
+}
+```
+
+- Then do the same for the social fields...
+
+```js
+for (const key in profile.social) {
+  if (key in profileData) profileData[key] = profile.social[key];
+}
+```
+
+- For the skills in profile, there is a good chance that this is an array because in the back end we store the skills as an array in our database, so we check if it is an array and if it is turn it into a string for the component..
+
+```js
+if (Array.isArray(profileData.skills))
+  profileData.skills = profileData.skills.join(', ');
+```
+
+- Finally we set local state in the component..
+
+```js
+setFormData(profileData);
+```
+
+- So paying attention to the linter warnings here, improved the code readability, reduced the verbosity and ultimately is less bug prone and more efficient.
+- There are a whole lot of people far more experienced with react than you or I ever will be at Facebook who put a lot of time and effort into making tooling such as the linter here, so it makes sense to pay good attention to warnings and see what we can improve.
+
 ## Add Education & Experiences
 
 ## List Education & Experiences
